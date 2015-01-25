@@ -24,12 +24,7 @@ randomForest(training, predicted_species, ntree = 1)
 ```
 yields 99% accurate results.
 
----
-
-## More on the Iris data set
-
 Iris dataset has 5 columns and 150 samples.  
-
 We will use columns 1 through 4 (sepal width, length, and petal width and length) to predict the Iris subspecies a given sample belongs to.
 
 
@@ -38,9 +33,6 @@ We will use columns 1 through 4 (sepal width, length, and petal width and length
 ## 1          5.1         3.5          1.4         0.2  setosa
 ## 2          4.9         3.0          1.4         0.2  setosa
 ## 3          4.7         3.2          1.3         0.2  setosa
-## 4          4.6         3.1          1.5         0.2  setosa
-## 5          5.0         3.6          1.4         0.2  setosa
-## 6          5.4         3.9          1.7         0.4  setosa
 ```
 
 ---
@@ -59,63 +51,42 @@ iris$Species <- as.factor(iris$Species)
 inTrain = createDataPartition(iris$Species, p = 3/4)[[1]]
 training = iris[ inTrain,]
 testing = iris[-inTrain,] 
-```
-
----
-
-## Training the model
-We will train the random classifier on the training sample.  
-We will then use the model with the validation / testing sample to determine the "out of sample" accuracy of our model.  
-
-```r
 rf <- randomForest(training[,-5], training$Species, ntree = input$iTree)
 predTraining <- predict(rf, training[,-5])
 predTesting<- predict(rf, testing[,-5])
 # Accuracy
 cmTesting <- confusionMatrix(predTesting, testing$Species) 
 ```
-### Notice that ntree parameter can be set using input$iTree.
+Notice that ntree parameter can be set using input$iTree.
 This parameter is controlled by the slider in our shiny app.
 
---- 
+---
+
 ## Plotting the accuracy of nTree
 We'll retrain the model with 1 to 10 trees and look at the accuracy.  
 The objective is to attain the highest accuracy with the lowest number of trees, to minimize computational complexity.   
 
 
-```r
-accuracy<- function(nt) {
-    rf <- randomForest(training[,-5], training$Species, ntree = nt)
-    predTesting<- predict(rf, testing[,-5])
-    cmTesting <- confusionMatrix(predTesting, testing$Species) 
-    cmTesting$overall[1]
-}
-x_series <- (1:10)
-accuracy_series <- sapply(series,accuracy)
-```
 
----
-## Interactive Chart
-
-<div id = 'chart53f94761ab68' class = 'rChart nvd3'></div>
+<div id = 'chart637a69147380' class = 'rChart nvd3'></div>
 <script type='text/javascript'>
  $(document).ready(function(){
-      drawchart53f94761ab68()
+      drawchart637a69147380()
     });
-    function drawchart53f94761ab68(){  
+    function drawchart637a69147380(){  
       var opts = {
- "dom": "chart53f94761ab68",
+ "dom": "chart637a69147380",
 "width":    800,
 "height":    400,
 "x": "tree_vector",
 "y": "accuracy_vector",
 "type": "scatterChart",
-"id": "chart53f94761ab68" 
+"id": "chart637a69147380" 
 },
         data = [
  {
  "tree_vector": 1,
-"accuracy_vector": 0.9722222222222 
+"accuracy_vector": 0.9444444444444 
 },
 {
  "tree_vector": 2,
@@ -127,11 +98,11 @@ accuracy_series <- sapply(series,accuracy)
 },
 {
  "tree_vector": 4,
-"accuracy_vector": 0.9722222222222 
+"accuracy_vector": 0.9166666666667 
 },
 {
  "tree_vector": 5,
-"accuracy_vector": 0.9722222222222 
+"accuracy_vector":              1 
 },
 {
  "tree_vector": 6,
@@ -139,7 +110,7 @@ accuracy_series <- sapply(series,accuracy)
 },
 {
  "tree_vector": 7,
-"accuracy_vector":              1 
+"accuracy_vector": 0.9722222222222 
 },
 {
  "tree_vector": 8,
@@ -203,8 +174,7 @@ accuracy_series <- sapply(series,accuracy)
     };
 </script>
 
-
-The lowest accuracy is still around 97%.
+There is not a clear gain for having more than 1 tree
 
 
 

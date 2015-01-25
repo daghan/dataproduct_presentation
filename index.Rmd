@@ -23,23 +23,18 @@ randomForest(training, predicted_species, ntree = 1)
 ```  
 yields 99% accurate results.
 
----
-
-## More on the Iris data set
-
 Iris dataset has 5 columns and 150 samples.  
-
 We will use columns 1 through 4 (sepal width, length, and petal width and length) to predict the Iris subspecies a given sample belongs to.
 
 ```{r echo=FALSE}
-head(iris)
+head(iris,3)
 ```  
 
 ---
 ## Learning algorithm
 We will split the 150 samples to training (75%) and validation (25%) sets.  
 To minimize side effect of the sample ordering , we'll randomize the sample selection.
-``` {r cache=TRUE, warning=FALSE}
+``` {r cache=TRUE, warning=FALSE, eval=FALSE}
 library(RANN)
 library(caret)
 library(rpart)
@@ -50,41 +45,22 @@ iris$Species <- as.factor(iris$Species)
 inTrain = createDataPartition(iris$Species, p = 3/4)[[1]]
 training = iris[ inTrain,]
 testing = iris[-inTrain,] 
-```
-
----
-
-## Training the model
-We will train the random classifier on the training sample.  
-We will then use the model with the validation / testing sample to determine the "out of sample" accuracy of our model.  
-``` {r cache=TRUE, eval=FALSE}
 rf <- randomForest(training[,-5], training$Species, ntree = input$iTree)
 predTraining <- predict(rf, training[,-5])
 predTesting<- predict(rf, testing[,-5])
 # Accuracy
 cmTesting <- confusionMatrix(predTesting, testing$Species) 
 ```
-### Notice that ntree parameter can be set using input$iTree.
+Notice that ntree parameter can be set using input$iTree.
 This parameter is controlled by the slider in our shiny app.
 
---- 
+---
+
 ## Plotting the accuracy of nTree
 We'll retrain the model with 1 to 10 trees and look at the accuracy.  
 The objective is to attain the highest accuracy with the lowest number of trees, to minimize computational complexity.   
 
-```{r cache=TRUE}
-accuracy<- function(nt) {
-    rf <- randomForest(training[,-5], training$Species, ntree = nt)
-    predTesting<- predict(rf, testing[,-5])
-    cmTesting <- confusionMatrix(predTesting, testing$Species) 
-    cmTesting$overall[1]
-}
-x_series <- (1:10)
-accuracy_series <- sapply(series,accuracy)
-```   
 
----
-## Interactive Chart
 ```{r results = 'asis', comment = NA, message = F, echo = F}
 require(rCharts)
 
@@ -102,8 +78,7 @@ mPlot <- nPlot(accuracy_vector ~ tree_vector, data = df, type = 'scatterChart')
 mPlot$show('inline')
 ```   
 
-
-The lowest accuracy is still around 97%.
+There is not a clear gain for going beyond 3-4 trees
 
 
 

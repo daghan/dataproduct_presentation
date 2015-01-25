@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Efficiency of the Random Forest classifier</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Efficiency of the Random Forest classifier">
+  <meta name="author" content="Daghan Altas">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="libraries/widgets/nvd3/css/nv.d3.css"></link>
+<link rel=stylesheet href="libraries/widgets/nvd3/css/rNVD3.css"></link>
+<link rel=stylesheet href="./assets/css/ribbons.css"></link>
+<link rel=stylesheet href="./assets/css/slidify.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  <script src="libraries/widgets/nvd3/js/jquery-1.8.2.min.js"></script>
+<script src="libraries/widgets/nvd3/js/d3.v3.min.js"></script>
+<script src="libraries/widgets/nvd3/js/nv.d3.min-new.js"></script>
+<script src="libraries/widgets/nvd3/js/fisheye.js"></script>
+
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>Efficiency of the Random Forest classifier</h1>
+    <h2>Tested on R Iris dataset library</h2>
+    <p>Daghan Altas<br/>Lifetime R learner</p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h2>Overview</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Random Forest is a highly accurate, yet easy-to-use classifier.<br>
+In this presentation we apply the random forest to determine the Iris species based on length and width.</p>
+
+<p>We will show that a simple random forest with a simple tree (see below with ntree = 1)</p>
+
+<pre><code class="r">randomForest(training, predicted_species, ntree = 1)
+</code></pre>
+
+<p>yields 99% accurate results.</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-2" style="background:;">
+  <hgroup>
+    <h2>More on the Iris data set</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Iris dataset has 5 columns and 150 samples.  </p>
+
+<p>We will use columns 1 through 4 (sepal width, length, and petal width and length) to predict the Iris subspecies a given sample belongs to.</p>
+
+<pre><code>##   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
+## 1          5.1         3.5          1.4         0.2  setosa
+## 2          4.9         3.0          1.4         0.2  setosa
+## 3          4.7         3.2          1.3         0.2  setosa
+## 4          4.6         3.1          1.5         0.2  setosa
+## 5          5.0         3.6          1.4         0.2  setosa
+## 6          5.4         3.9          1.7         0.4  setosa
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-3" style="background:;">
+  <hgroup>
+    <h2>Learning algorithm</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>We will split the 150 samples to training (75%) and validation (25%) sets.<br>
+To minimize side effect of the sample ordering , we&#39;ll randomize the sample selection.</p>
+
+<pre><code class="r">library(RANN)
+library(caret)
+library(rpart)
+library(randomForest)
+library(e1071)
+
+iris$Species &lt;- as.factor(iris$Species)
+inTrain = createDataPartition(iris$Species, p = 3/4)[[1]]
+training = iris[ inTrain,]
+testing = iris[-inTrain,] 
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-4" style="background:;">
+  <hgroup>
+    <h2>Training the model</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>We will train the random classifier on the training sample.<br>
+We will then use the model with the validation / testing sample to determine the &quot;out of sample&quot; accuracy of our model.  </p>
+
+<pre><code class="r">rf &lt;- randomForest(training[,-5], training$Species, ntree = input$iTree)
+predTraining &lt;- predict(rf, training[,-5])
+predTesting&lt;- predict(rf, testing[,-5])
+# Accuracy
+cmTesting &lt;- confusionMatrix(predTesting, testing$Species) 
+</code></pre>
+
+<h3>Notice that ntree parameter can be set using input$iTree.</h3>
+
+<p>This parameter is controlled by the slider in our shiny app.</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-5" style="background:;">
+  <hgroup>
+    <h2>Plotting the accuracy of nTree</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>We&#39;ll retrain the model with 1 to 10 trees and look at the accuracy.<br>
+The objective is to attain the highest accuracy with the lowest number of trees, to minimize computational complexity.   </p>
+
+<pre><code class="r">accuracy&lt;- function(nt) {
+    rf &lt;- randomForest(training[,-5], training$Species, ntree = nt)
+    predTesting&lt;- predict(rf, testing[,-5])
+    cmTesting &lt;- confusionMatrix(predTesting, testing$Species) 
+    cmTesting$overall[1]
+}
+x_series &lt;- (1:10)
+accuracy_series &lt;- sapply(series,accuracy)
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-6" style="background:;">
+  <hgroup>
+    <h2>Interactive Chart</h2>
+  </hgroup>
+  <article data-timings="">
+    <div id = 'chart53f94761ab68' class = 'rChart nvd3'></div>
+
+<script type='text/javascript'>
+ $(document).ready(function(){
+      drawchart53f94761ab68()
+    });
+    function drawchart53f94761ab68(){  
+      var opts = {
+ "dom": "chart53f94761ab68",
+"width":    800,
+"height":    400,
+"x": "tree_vector",
+"y": "accuracy_vector",
+"type": "scatterChart",
+"id": "chart53f94761ab68" 
+},
+        data = [
+ {
+ "tree_vector": 1,
+"accuracy_vector": 0.9722222222222 
+},
+{
+ "tree_vector": 2,
+"accuracy_vector": 0.9722222222222 
+},
+{
+ "tree_vector": 3,
+"accuracy_vector":              1 
+},
+{
+ "tree_vector": 4,
+"accuracy_vector": 0.9722222222222 
+},
+{
+ "tree_vector": 5,
+"accuracy_vector": 0.9722222222222 
+},
+{
+ "tree_vector": 6,
+"accuracy_vector":              1 
+},
+{
+ "tree_vector": 7,
+"accuracy_vector":              1 
+},
+{
+ "tree_vector": 8,
+"accuracy_vector":              1 
+},
+{
+ "tree_vector": 9,
+"accuracy_vector":              1 
+},
+{
+ "tree_vector": 10,
+"accuracy_vector": 0.9722222222222 
+} 
+]
+  
+      if(!(opts.type==="pieChart" || opts.type==="sparklinePlus" || opts.type==="bulletChart")) {
+        var data = d3.nest()
+          .key(function(d){
+            //return opts.group === undefined ? 'main' : d[opts.group]
+            //instead of main would think a better default is opts.x
+            return opts.group === undefined ? opts.y : d[opts.group];
+          })
+          .entries(data);
+      }
+      
+      if (opts.disabled != undefined){
+        data.map(function(d, i){
+          d.disabled = opts.disabled[i]
+        })
+      }
+      
+      nv.addGraph(function() {
+        var chart = nv.models[opts.type]()
+          .width(opts.width)
+          .height(opts.height)
+          
+        if (opts.type != "bulletChart"){
+          chart
+            .x(function(d) { return d[opts.x] })
+            .y(function(d) { return d[opts.y] })
+        }
+          
+         
+        
+          
+        
+
+        
+        
+        
+      
+       d3.select("#" + opts.id)
+        .append('svg')
+        .datum(data)
+        .transition().duration(500)
+        .call(chart);
+
+       nv.utils.windowResize(chart.update);
+       return chart;
+      });
+    };
+</script>
+
+<p>The lowest accuracy is still around 97%.</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-7" style="background:;">
+  <hgroup>
+    <h2>Conclusion</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Random Forest is a powerful and efficient classifier, even with a single tree.  </p>
+
+<p>In this presentation, we have shown that adding trees for simple classification problems are not required.</p>
+
+<p>Check out the interactive Shiny app at   </p>
+
+<p><a href="https://daghan.shinyapps.io/Forest/">https://daghan.shinyapps.io/Forest/</a>   </p>
+
+<p>for trying it our yourself.</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='Overview'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='More on the Iris data set'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='Learning algorithm'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='Training the model'>
+         4
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=5 title='Plotting the accuracy of nTree'>
+         5
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=6 title='Interactive Chart'>
+         6
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=7 title='Conclusion'>
+         7
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>

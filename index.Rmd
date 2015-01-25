@@ -1,0 +1,122 @@
+---
+title       : Efficiency of the Random Forest classifier
+subtitle    : Tested on R Iris dataset library
+author      : Daghan Altas
+job         : Lifetime R learner
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : []            # {mathjax, quiz, bootstrap}
+ext_widgets : {rCharts: libraries/nvd3}
+mode        : selfcontained # {standalone, draft}
+knit        : slidify::knit2slides
+---
+
+
+## Overview
+Random Forest is a highly accurate, yet easy-to-use classifier.   
+In this presentation we apply the random forest to determine the Iris species based on length and width.
+
+We will show that a simple random forest with a simple tree (see below with ntree = 1)
+```{r eval=FALSE}
+randomForest(training, predicted_species, ntree = 1)
+```  
+yields 99% accurate results.
+
+---
+
+## More on the Iris data set
+
+Iris dataset has 5 columns and 150 samples.  
+
+We will use columns 1 through 4 (sepal width, length, and petal width and length) to predict the Iris subspecies a given sample belongs to.
+
+```{r echo=FALSE}
+head(iris)
+```  
+
+---
+## Learning algorithm
+We will split the 150 samples to training (75%) and validation (25%) sets.  
+To minimize side effect of the sample ordering , we'll randomize the sample selection.
+``` {r cache=TRUE, warning=FALSE}
+library(RANN)
+library(caret)
+library(rpart)
+library(randomForest)
+library(e1071)
+
+iris$Species <- as.factor(iris$Species)
+inTrain = createDataPartition(iris$Species, p = 3/4)[[1]]
+training = iris[ inTrain,]
+testing = iris[-inTrain,] 
+```
+
+---
+
+## Training the model
+We will train the random classifier on the training sample.  
+We will then use the model with the validation / testing sample to determine the "out of sample" accuracy of our model.  
+``` {r cache=TRUE, eval=FALSE}
+rf <- randomForest(training[,-5], training$Species, ntree = input$iTree)
+predTraining <- predict(rf, training[,-5])
+predTesting<- predict(rf, testing[,-5])
+# Accuracy
+cmTesting <- confusionMatrix(predTesting, testing$Species) 
+```
+### Notice that ntree parameter can be set using input$iTree.
+This parameter is controlled by the slider in our shiny app.
+
+--- 
+## Plotting the accuracy of nTree
+We'll retrain the model with 1 to 10 trees and look at the accuracy.  
+The objective is to attain the highest accuracy with the lowest number of trees, to minimize computational complexity.   
+
+```{r cache=TRUE}
+accuracy<- function(nt) {
+    rf <- randomForest(training[,-5], training$Species, ntree = nt)
+    predTesting<- predict(rf, testing[,-5])
+    cmTesting <- confusionMatrix(predTesting, testing$Species) 
+    cmTesting$overall[1]
+}
+x_series <- (1:10)
+accuracy_series <- sapply(series,accuracy)
+```   
+
+---
+## Interactive Chart
+```{r results = 'asis', comment = NA, message = F, echo = F}
+require(rCharts)
+
+accuracy<- function(nt) {
+    rf <- randomForest(training[,-5], training$Species, ntree = nt)
+    predTesting<- predict(rf, testing[,-5])
+    cmTesting <- confusionMatrix(predTesting, testing$Species) 
+    cmTesting$overall[1]
+}
+
+tree_vector <- (1:10)
+accuracy_vector <- sapply(tree_vector, accuracy)
+df = data.frame(tree_vector, accuracy_vector)
+mPlot <- nPlot(accuracy_vector ~ tree_vector, data = df, type = 'scatterChart')
+mPlot$show('inline')
+```   
+
+
+The lowest accuracy is still around 97%.
+
+
+
+---
+## Conclusion
+
+Random Forest is a powerful and efficient classifier, even with a single tree.  
+
+In this presentation, we have shown that adding trees for simple classification problems are not required.
+
+Check out the interactive Shiny app at   
+
+https://daghan.shinyapps.io/Forest/   
+
+for trying it our yourself.
+
